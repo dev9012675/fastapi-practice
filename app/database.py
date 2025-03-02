@@ -1,12 +1,11 @@
-import os
-from dotenv import load_dotenv
+from.config import settings
 from sqlalchemy import create_engine
-from sqlalchemy import MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-load_dotenv()
-engine = create_engine(os.getenv("SQLALCHEMY_DATABASE_URL"), echo=True)
+SQL_ALCHEMY_URL = f'{settings.dbms}://{settings.database_username}:{settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}'
+
+engine = create_engine(SQL_ALCHEMY_URL, echo=True)
 SessionLocal = sessionmaker(autoflush=False , autocommit=False , bind=engine)
 Base = declarative_base()
 

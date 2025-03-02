@@ -3,17 +3,14 @@ from datetime import datetime, timedelta, timezone
 from jwt.exceptions import InvalidTokenError
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends , HTTPException , status
-import os
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
-from . import schemas , models , database
+from . import schemas , models , database , config
 
 
-load_dotenv()
-
-SECRET_KEY =  os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+SECRET_KEY =  config.settings.secret_key
+ALGORITHM = config.settings.algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES = config.settings.access_token_expire_minutes
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 

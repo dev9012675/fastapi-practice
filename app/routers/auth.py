@@ -1,13 +1,11 @@
-from fastapi import FastAPI , status , HTTPException , Depends , APIRouter 
+from fastapi import  status , HTTPException , Depends , APIRouter 
 from sqlalchemy.orm import Session
 from ..database import  get_db
-from .. import models , schemas , utils , oauth2
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-import os
+from .. import models , schemas , utils , oauth2 , config
+from fastapi.security import  OAuth2PasswordRequestForm
 from dotenv import load_dotenv
-from datetime import datetime, timedelta, timezone
+from datetime import  timedelta
 
-load_dotenv()
 
 router = APIRouter(prefix="/api" ,
                    tags=["Authentication"])
@@ -18,7 +16,7 @@ async def get_user(user_credentials:OAuth2PasswordRequestForm = Depends() , db :
     if not user or not utils.verify(user_credentials.password , user.password):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN , detail='Invalid Credentials.')
     
-    access_token_expires = timedelta(minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")))
+    access_token_expires = timedelta(minutes=int(config.settings.access_token_expire_minutes))
     print(f'Access token expiry interval:{access_token_expires}')
     access_token = oauth2.create_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
