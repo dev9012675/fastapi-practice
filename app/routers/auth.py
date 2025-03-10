@@ -21,7 +21,7 @@ async def get_user(user_credentials:OAuth2PasswordRequestForm = Depends() , db :
     access_token = oauth2.create_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
-    return schemas.Token(access_token=access_token, token_type="bearer")
+    return schemas.Token(access_token=access_token, token_type="bearer" , email = user.email , id = user.id)
 
     
     

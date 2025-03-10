@@ -37,6 +37,8 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    email:EmailStr
+    id:int
 
 class TokenData(BaseModel):
     id: int
