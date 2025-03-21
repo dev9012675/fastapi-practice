@@ -1,6 +1,7 @@
 from pydantic import BaseModel , EmailStr , Field
 from typing import Optional
 from datetime import datetime
+from fastapi import UploadFile , File
 
 class PostBase(BaseModel):
     title:str
@@ -8,7 +9,7 @@ class PostBase(BaseModel):
     published: Optional[bool] = None
 
 class PostCreate(PostBase):
-    pass
+    audioFiles : Optional[list[UploadFile]] = File(None)
 
 class UserOut(BaseModel):
     id:int

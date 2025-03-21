@@ -1,8 +1,8 @@
-from fastapi import  status , HTTPException , Depends , APIRouter
+from fastapi import  status , HTTPException , Depends , APIRouter , Form
 from sqlalchemy.orm import Session
 from ..database import  get_db
 from .. import models , schemas , oauth2
-from typing import List 
+from typing import List , Annotated 
 
 router = APIRouter(prefix="/api/posts" ,
                    tags=["Posts"])
@@ -31,18 +31,23 @@ async def get_post(id:int , db : Session = Depends(get_db) ,
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail='Post does not exist.')
     
 
-@router.post('/' , status_code= status.HTTP_201_CREATED , response_model=schemas.Post)
-async def create_post(post: schemas.PostCreate, db : Session = Depends(get_db) , 
+@router.post('/' , status_code= status.HTTP_201_CREATED )
+async def create_post(post: Annotated[schemas.PostCreate , Form()], db : Session = Depends(get_db) , 
                       current_user = Depends(oauth2.get_current_user)):
     #cursor.execute(""" INSERT INTO posts(title , content , published) VALUES(%s , %s , %s) RETURNING *""" ,
     #             (post.title , post.content , post.published))
    # post =  cursor.fetchone()
     #conn.commit()
-    new_post = models.Post(owner_id=current_user.id ,**post.model_dump())
-    db.add(new_post)
-    db.commit()
-    db.refresh(new_post)
-    return new_post
+    #new_post = models.Post(owner_id=current_user.id ,**post.model_dump())
+    #db.add(new_post)
+    #db.commit()
+    #db.refresh(new_post)
+    #return new_post
+    postDict = post.model_dump()
+    audioFiles = postDict.pop('audioFiles')
+    print(f'AudioFiles:{audioFiles}')
+    print(f'Rest of the dictionary:{postDict}')
+    
 
 
 @router.put('/{id}' , response_model=schemas.Post)
