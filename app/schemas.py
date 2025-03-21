@@ -44,6 +44,3 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     id: int
 
-class Vote(BaseModel):
-    post_id:int
-    dir:int = Field(le= 1)
