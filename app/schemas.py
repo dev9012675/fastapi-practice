@@ -23,6 +23,7 @@ class Post(PostBase):
     created_at:datetime
     owner_id:int
     owner:UserOut
+    files:Optional[str] = None
     class Config:
         orm_mode = True
 
@@ -43,4 +44,9 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     id: int
+
+class RetrieveFiles(BaseModel):
+    path:str
+
+
 

@@ -1,7 +1,7 @@
 from fastapi import  status , HTTPException , Depends , APIRouter , Form
 from sqlalchemy.orm import Session
 from ..database import  get_db
-from .. import models , schemas , oauth2
+from .. import models , schemas , oauth2 , utils
 from typing import List , Annotated 
 
 router = APIRouter(prefix="/api/posts" ,
@@ -12,18 +12,14 @@ async def get_posts(db : Session = Depends(get_db) ,
                       current_user = Depends(oauth2.get_current_user) , limit:int = 10 , skip:int = 0 ,
                        search:str = "" ):
     print(f'The current user is:{current_user.email}')
-    #cursor.execute("""SELECT * FROM posts""")
-    #post_data = cursor.fetchall()
-    #return {"data":post_data}
-    posts = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
+    posts = db.query(models.Post).all()
     return posts
 
 
 @router.get('/{id}' , response_model=schemas.Post)
 async def get_post(id:int , db : Session = Depends(get_db) , 
                       current_user = Depends(oauth2.get_current_user)):
-    #cursor.execute("""SELECT * FROM posts WHERE id=%s""" , [id])
-   # post = cursor.fetchone()
+
     post =  db.query(models.Post).filter(models.Post.id == id).first()
     if post:
         return post
@@ -34,19 +30,24 @@ async def get_post(id:int , db : Session = Depends(get_db) ,
 @router.post('/' , status_code= status.HTTP_201_CREATED )
 async def create_post(post: Annotated[schemas.PostCreate , Form()], db : Session = Depends(get_db) , 
                       current_user = Depends(oauth2.get_current_user)):
-    #cursor.execute(""" INSERT INTO posts(title , content , published) VALUES(%s , %s , %s) RETURNING *""" ,
-    #             (post.title , post.content , post.published))
-   # post =  cursor.fetchone()
-    #conn.commit()
-    #new_post = models.Post(owner_id=current_user.id ,**post.model_dump())
-    #db.add(new_post)
-    #db.commit()
-    #db.refresh(new_post)
-    #return new_post
     postDict = post.model_dump()
     audioFiles = postDict.pop('audioFiles')
-    print(f'AudioFiles:{audioFiles}')
-    print(f'Rest of the dictionary:{postDict}')
+    new_post = models.Post(owner_id=current_user.id ,**postDict)
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+    if  audioFiles:
+        path = f'files/{current_user.id}/posts/{new_post.id}/'
+        for file in audioFiles:
+            await utils.create_file( path , file)
+        update_query = db.query(models.Post).filter(models.Post.id == new_post.id)
+        update_query.update({"files":path} , synchronize_session=False)
+        db.commit()
+        new_post = update_query.first()
+    else:
+        print('Post has no audio files')
+    
+    return new_post
     
 
 
@@ -68,9 +69,6 @@ async def update_post(id:int , post:schemas.PostCreate ,  db : Session = Depends
 @router.delete('/{id}' , status_code= status.HTTP_204_NO_CONTENT)
 async def delete_post(id:int ,  db : Session = Depends(get_db) , 
                      current_user = Depends(oauth2.get_current_user)):
-   # index =  await find_index(id)
-   # if index != None:
-   #     posts.pop(index)
     post_query =  db.query(models.Post).filter(models.Post.id == id)
     post = post_query.first()
     if post == None:

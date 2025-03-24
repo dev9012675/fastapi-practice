@@ -1,7 +1,10 @@
-from fastapi import  status , HTTPException , Depends , APIRouter , UploadFile
-from .. import  utils , oauth2
+from fastapi import  status , HTTPException , Depends , APIRouter , UploadFile , Body
+from .. import  utils , oauth2 , schemas
 import speech_recognition as sr
-import shutil
+from os import listdir
+from os.path import isfile, join
+import pathlib
+from fastapi.responses import FileResponse 
 
 router = APIRouter(prefix="/api/audio" ,
                    tags=["Audio"])
@@ -25,7 +28,19 @@ async def get_transcription(file:UploadFile , current_user = Depends(oauth2.get_
         print("Could not request results from Google Speech Recognition service; {0}".format(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST , detail='Could not request results from service')
     else:
-        shutil.rmtree(path)
         return {"transcription":transcription}
-   
+    
+@router.post('/retrieveFilenames')
+async def get_files(audio:schemas.RetrieveFiles , current_user = Depends(oauth2.get_current_user)):
+    onlyfiles = [f for f in listdir(audio.path) if isfile(join(audio.path, f))]
+    print(f'Files in path are:{onlyfiles}')
+    return {"files":onlyfiles}
+
+@router.post('/retrieveFile')
+async def get_file(fileToGet:schemas.RetrieveFiles , current_user = Depends(oauth2.get_current_user)):
+    file = pathlib.Path(fileToGet.path)
+    if file.is_file():
+        return FileResponse(fileToGet.path)
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail='File not found')
 
