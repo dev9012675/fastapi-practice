@@ -43,6 +43,8 @@ async def create_post(post: Annotated[schemas.PostCreate , Form()], db : Session
 @router.put('/{id}' , response_model=schemas.Post)
 async def update_post(id:int , post:schemas.PostCreate ,  db : Session = Depends(get_db) , 
                       current_user = Depends(oauth2.get_current_user)):
+    postDict = post.model_dump()
+    audioFiles = postDict.pop('audioFiles')
     update_query = db.query(models.Post).filter(models.Post.id == id)
     updated_post = update_query.first()  
     if updated_post == None:
@@ -50,7 +52,7 @@ async def update_post(id:int , post:schemas.PostCreate ,  db : Session = Depends
     elif updated_post.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN , detail='Not authorized to perform action.')
     else:
-        update_query.update(post.model_dump() , synchronize_session=False)
+        update_query.update(postDict , synchronize_session=False)
         db.commit()
         return update_query.first()
         
