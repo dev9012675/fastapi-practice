@@ -36,17 +36,6 @@ async def create_post(post: Annotated[schemas.PostCreate , Form()], db : Session
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    if  audioFiles:
-        path = f'files/{current_user.id}/posts/{new_post.id}/'
-        for file in audioFiles:
-            await utils.create_file( path , file)
-        update_query = db.query(models.Post).filter(models.Post.id == new_post.id)
-        update_query.update({"files":path} , synchronize_session=False)
-        db.commit()
-        new_post = update_query.first()
-    else:
-        print('Post has no audio files')
-    
     return new_post
     
 
