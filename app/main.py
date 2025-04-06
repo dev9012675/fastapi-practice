@@ -8,9 +8,7 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-origins = [
-    settings.allowed_origins
-]
+origins = settings.allowed_origins.split()
 
 
 
