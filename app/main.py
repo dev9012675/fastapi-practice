@@ -8,9 +8,11 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-origins = settings.allowed_origins.split()
+origins = [
+    "http://localhost:5173"
+]
 
-
+print(f'Environment variables log:{settings.allowed_origins.split()}')
 
 app.add_middleware(
     CORSMiddleware,
