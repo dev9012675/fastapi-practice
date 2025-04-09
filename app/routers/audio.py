@@ -5,6 +5,8 @@ from os import listdir
 from os.path import isfile, join
 import pathlib
 from fastapi.responses import FileResponse 
+import soundfile
+from io import BytesIO
 
 router = APIRouter(prefix="/api/audio" ,
                    tags=["Audio"])
@@ -12,20 +14,21 @@ router = APIRouter(prefix="/api/audio" ,
 @router.post('/transcribe')
 async def get_transcription(file:UploadFile , current_user = Depends(oauth2.get_current_user) ):
     r = sr.Recognizer()
-    path = f'files/{current_user.id}'
-    await utils.create_file(path , file)
-    AudioFile = (f'{path}/{file.filename}')
+    #path = f'files/{current_user.id}'
+    #await utils.create_file(path , file)
+    #AudioFile = (f'{path}/{file.filename}')
+    AudioFile = BytesIO()
+    data, samplerate = soundfile.read(BytesIO(await file.read()))
+    soundfile.write(AudioFile, data, samplerate, subtype='PCM_16' , format='WAV')
+    AudioFile.seek(0)
     with sr.AudioFile(AudioFile) as source:
         audio = r.record(source)
         
     try:
         transcription = r.recognize_google(audio)
-        print("Google Speech Recognition thinks you said " + transcription)
     except sr.UnknownValueError:
-        print("Google Speech Recognition could not understand audio")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST , detail='Could not understand audio')
     except sr.RequestError as e:
-        print("Could not request results from Google Speech Recognition service; {0}".format(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST , detail='Could not request results from service')
     else:
         return {"transcription":transcription}
