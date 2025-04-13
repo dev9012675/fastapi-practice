@@ -1,8 +1,10 @@
-from fastapi import  status , HTTPException , Depends , APIRouter , Form
+from fastapi import  status , HTTPException , Depends , APIRouter , Form , WebSocket , WebSocketDisconnect
 from sqlalchemy.orm import Session
 from ..database import  get_db
-from .. import models , schemas , oauth2 , utils
+from .. import models , schemas , oauth2 , utils , connections
 from typing import List , Annotated 
+
+manager = connections.Connections()
 
 router = APIRouter(prefix="/api/posts" ,
                    tags=["Posts"])
@@ -14,6 +16,21 @@ async def get_posts(db : Session = Depends(get_db) ,
     print(f'The current user is:{current_user.email}')
     posts = db.query(models.Post).all()
     return posts
+
+@router.websocket('/ws')
+async def post_updates(websocket:WebSocket):
+     await manager.connect(websocket)
+     print("Client connected")
+     print(f'Active Connections:{manager.active_connections}')
+     try:
+        while True:
+            data = await websocket.receive_text()
+            await manager.send_personal_message(f"You wrote: {data}", websocket)
+            await manager.broadcast(f"Client  says: {data}")
+     except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        print('Client disconnected')
+        await manager.broadcast(f"Client disconnected")
 
 
 @router.get('/{id}' , response_model=schemas.Post)
@@ -36,6 +53,7 @@ async def create_post(post: Annotated[schemas.PostCreate , Form()], db : Session
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
+    await manager.broadcast(str({"type":"create"}))
     return new_post
     
 

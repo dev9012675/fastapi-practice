@@ -4,7 +4,12 @@ from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.sql.expression import text
 from sqlalchemy.orm import relationship
 
-class Post(Base):
+class MyBase(Base):
+    __abstract__ = True
+    def to_dict(self):
+        return {field.name:getattr(self, field.name) for field in self.__table__.c}
+
+class Post(MyBase):
     __tablename__ = "posts"
     id = Column( Integer, primary_key=True , nullable=False)
     title = Column( String(30) , nullable=False)
@@ -16,7 +21,7 @@ class Post(Base):
 
     owner = relationship("User")
 
-class User(Base):
+class User(MyBase):
     __tablename__ = "users"
     id = Column( Integer, primary_key=True , nullable=False)
     email = Column( String,unique=True , nullable=False)
