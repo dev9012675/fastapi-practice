@@ -72,6 +72,7 @@ async def update_post(id:int , post:schemas.PostCreate ,  db : Session = Depends
     else:
         update_query.update(postDict , synchronize_session=False)
         db.commit()
+        await manager.broadcast(str({"type":"update"}))
         return update_query.first()
         
 
@@ -86,4 +87,5 @@ async def delete_post(id:int ,  db : Session = Depends(get_db) ,
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN , detail='Not authorized to perform action.')
     else:
         post_query.delete()
+        await manager.broadcast(str({"type":"delete"}))
         db.commit()
