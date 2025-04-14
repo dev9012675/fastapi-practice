@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from ..database import  get_db
 from .. import models , schemas , oauth2 , utils , connections
 from typing import List , Annotated 
+from websockets.frames import CloseCode
 
 manager = connections.Connections()
 
@@ -18,7 +19,14 @@ async def get_posts(db : Session = Depends(get_db) ,
     return posts
 
 @router.websocket('/ws')
-async def post_updates(websocket:WebSocket):
+async def post_updates(websocket:WebSocket , db : Session = Depends(get_db) ):
+     await websocket.accept()
+     token = await websocket.receive_text()
+     print(f'Auth Token:{token}')
+     user = await oauth2.get_current_user(token= token , db=db, ws=True )
+     if user is None:
+        await websocket.close(CloseCode.INTERNAL_ERROR, "authentication failed")
+        return
      await manager.connect(websocket)
      print("Client connected")
      print(f'Active Connections:{manager.active_connections}')
